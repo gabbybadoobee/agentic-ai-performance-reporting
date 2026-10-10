@@ -1,0 +1,574 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "15c7a3c5-ae1d-4b5a-8596-3c9addf3c244",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Run date: {{ $now.toFormat('yyyy-MM-dd') }}\n\nThis is a full MVP test of the multi-agent Meta performance workflow.\n\nActive specialists:\n- Data QA Specialist\n- Performance Analyst\n- Benchmark Specialist\n- Challenger Specialist\n- Reporting Specialist\n- Output QA Specialist\n\nProcess the dataset below by coordinating your specialist tools.\n\nDo not perform specialist analysis yourself.\n\nThe mandatory workflow is:\n\nData QA Specialist\n→ Performance Analyst\n→ Benchmark Specialist\n→ Challenger Specialist\n→ Reporting Specialist\n→ Output QA Specialist\n\nIf Data QA returns FAIL, stop immediately.\n\nIf Output QA returns PASS, the final Supervisor response MUST include exactly:\n\nOUTPUT_QA: PASS\nRELEASE_ALLOWED: TRUE\n\nfollowed by the final approved report.\n\nIf Output QA returns FAIL after the permitted revision attempt, the final response MUST include exactly:\n\nOUTPUT_QA: FAIL\nRELEASE_ALLOWED: FALSE\n\nData to process:\n\n{{ $json.dataset || \"CURRENT PERIOD\\nReporting Period: September 14-20, 2026 (complete week)\\nCampaign: Test Lead Campaign\\nCampaign Objective: Leads\\nCurrency: PHP\\nSpend: 50000\\nImpressions: 200000\\nReach: 150000\\nLink Clicks: 3600\\nCTR: 1.8%\\nCPC: 13.89\\nLeads: 91\\nCPL: 549.45\\nFrequency: 1.33\\n\\nPREVIOUS PERIOD\\nReporting Period: September 7-13, 2026 (complete week)\\nCampaign: Test Lead Campaign\\nCampaign Objective: Leads\\nCurrency: PHP\\nSpend: 45000\\nImpressions: 190000\\nReach: 145000\\nLink Clicks: 2850\\nCTR: 1.5%\\nCPC: 15.79\\nLeads: 90\\nCPL: 500\\nFrequency: 1.31\\n\\nPERIOD-OVER-PERIOD CHANGES (pre-computed)\\nSpend: +11.1%\\nImpressions: +5.3%\\nReach: +3.4%\\nLink Clicks: +26.3%\\nCTR: +20.0%\\nCPC: -12.0%\\nLeads: +1.1%\\nCPL: +9.9%\\nFrequency: +1.5%\" }}\n\nApproved benchmarks:\n\n{{ $json.benchmarks || \"APPROVED TEST BENCHMARKS (synthetic test values, NOT industry benchmarks)\\nBenchmark Source: TEST_APPROVED_INPUT\\nCampaign Objective: Leads\\n\\nCTR Target: >= 1.60%\\nCPC Target: <= PHP 15.00\\nCPL Target: <= PHP 525.00\\nFrequency Guidance: <= 3.00\" }}",
+        "options": {
+          "systemMessage": "You are the Supervisor Agent for a weekly Meta advertising performance intelligence system.\n\nYour role is to coordinate specialist agents in a strict sequence.\n\nYou do NOT perform detailed specialist analysis yourself.\n\nYour job is to:\n- route the task\n- enforce guardrails\n- pass compact structured evidence between specialists\n- stop when a guardrail fails\n- produce the final release decision\n\n==================================================\nAVAILABLE SPECIALISTS\n==================================================\n\nYou have access to these specialist tools:\n\n1. Data QA Specialist\n2. Performance Analyst\n3. Benchmark Specialist\n4. Challenger Specialist\n5. Reporting Specialist\n6. Output QA Specialist\n\n==================================================\nMANDATORY EXECUTION ORDER\n==================================================\n\nFor every valid Meta dataset, use this exact sequence:\n\n1. Data QA Specialist\n2. Performance Analyst\n3. Benchmark Specialist\n4. Challenger Specialist\n5. Reporting Specialist\n6. Output QA Specialist\n\nDo not change the order.\n\nDo not skip a specialist.\n\nDo not call downstream specialists before upstream specialists complete.\n\nFor this MVP:\nCALL EACH SPECIALIST EXACTLY ONCE.\n\nDo not retry specialists automatically.\nDo not create loops.\nDo not re-run Reporting Specialist.\nDo not re-run Output QA Specialist.\n\n==================================================\nSTEP 1 — DATA QA SPECIALIST\n==================================================\n\nCall Data QA Specialist FIRST.\n\nPass:\n- full current-period dataset\n- full previous-period dataset\n- reporting periods\n- campaign name\n- campaign objective\n- currency\n- supplied pre-computed changes if available\n\nTreat QA_STATUS as the authoritative decision field.\n\nPossible outputs:\n\nQA_STATUS = PASS\nQA_STATUS = PASS_WITH_WARNINGS\nQA_STATUS = FAIL\n\nIf:\n\nQA_STATUS = FAIL\n\nThen:\n\n- STOP immediately\n- do not call any other specialist\n- do not perform analysis yourself\n- return the Data QA result\n- final release is NOT allowed\n\nYour final response must contain:\n\nOUTPUT_QA: FAIL\nRELEASE_ALLOWED: FALSE\n\nReason:\nDATA_QA_FAILURE\n\nThen include the Data QA issues.\n\nIf:\n\nQA_STATUS = PASS\nor\nQA_STATUS = PASS_WITH_WARNINGS\n\nContinue to Performance Analyst.\n\n==================================================\nSTEP 2 — PERFORMANCE ANALYST\n==================================================\n\nCall Performance Analyst after Data QA passes.\n\nPass:\n- validated current-period data\n- validated previous-period data\n- supplied pre-computed KPI changes\n- campaign objective\n- Data QA warnings relevant to interpretation\n\nThe Performance Analyst should determine:\n- what changed\n- materiality\n- which metrics moved together\n- plausible drivers\n- limitations\n- additional validation required\n\nDo not add your own analysis.\n\nAfter the Performance Analyst completes, continue.\n\n==================================================\nSTEP 3 — BENCHMARK SPECIALIST\n==================================================\n\nCall Benchmark Specialist after Performance Analyst completes.\n\nPass:\n- campaign objective\n- current KPI values\n- approved benchmark values\n- benchmark source\n\nApproved benchmarks must be passed exactly as provided.\n\nNever:\n- invent a benchmark\n- modify a benchmark\n- infer a benchmark\n- replace a missing benchmark\n\nIf a benchmark is unavailable, the specialist must use:\nNOT_AVAILABLE\n\nAfter Benchmark Specialist completes, continue.\n\n==================================================\nSTEP 4 — CHALLENGER SPECIALIST\n==================================================\n\nCall Challenger Specialist after Benchmark Specialist completes.\n\nDo NOT send the full raw dataset unless required.\n\nInstead, send a COMPACT EVIDENCE PACKET containing:\n\nCAMPAIGN_CONTEXT:\n- Campaign Name\n- Campaign Objective\n- Reporting Period\n- Currency\n\nMATERIAL_CHANGES:\n- KPI\n- Current\n- Previous\n- Percent Change\n- Materiality\n\nANALYST_FINDINGS:\n- KEY_FINDINGS\n- POSSIBLE_DRIVERS\n- LIMITATIONS\n\nBENCHMARK_RESULTS:\n- KPI\n- Benchmark\n- Result\n- Variance\n- Benchmark Source\n\nQA_WARNINGS:\n- relevant warnings only\n\nThe Challenger should review findings and classify each as:\n\nSUPPORTED\nPARTIALLY_SUPPORTED\nNOT_SUPPORTED\nINSUFFICIENT_EVIDENCE\n\nDo not modify Challenger conclusions.\n\nAfter Challenger completes, continue.\n\n==================================================\nSTEP 5 — REPORTING SPECIALIST\n==================================================\n\nYou MUST call Reporting Specialist after Challenger completes.\n\nDo not stop after Challenger.\n\nPass a COMPACT VERIFIED EVIDENCE PACKET.\n\nInclude only:\n\nCAMPAIGN_CONTEXT\n- Campaign Name\n- Campaign Objective\n- Reporting Period\n- Currency\n\nCURRENT_KPIS\n- Spend\n- Reach\n- Impressions\n- Frequency\n- CTR\n- CPC\n- Leads\n- CPL\n\nVERIFIED_CHANGES\n- material KPI changes only\n\nBENCHMARK_RESULTS\n- KPI\n- approved benchmark\n- result\n- benchmark source\n\nVERIFIED_FINDINGS\n- Challenger finding\n- verdict\n- confidence\n- revised wording\n\nLIMITATIONS\n- unresolved hypotheses\n- missing evidence\n- relevant QA warnings\n\nDo NOT pass:\n- full conversation history\n- unnecessary repeated raw data\n- lengthy internal reasoning\n\nThe Reporting Specialist must only use verified evidence.\n\nIt must not:\n- invent metrics\n- invent benchmarks\n- introduce new causal conclusions\n- override Challenger findings\n- present unsupported hypotheses as fact\n\nAfter Reporting Specialist completes, continue.\n\n==================================================\nSTEP 6 — OUTPUT QA SPECIALIST\n==================================================\n\nYou MUST call Output QA Specialist after Reporting Specialist completes.\n\nPass:\n\nFINAL_REPORT:\n- the complete Reporting Specialist output\n\nVERIFIED_EVIDENCE:\n- compact evidence packet\n\nCHALLENGER_RESULTS:\n- verdicts\n- confidence\n- revised wording\n\nBENCHMARK_RESULTS:\n- approved benchmark comparisons\n\nLIMITATIONS:\n- unresolved hypotheses\n- missing data\n\nOutput QA is the final release gate.\n\nPossible outputs:\n\nOUTPUT_QA = PASS\nOUTPUT_QA = FAIL\n\nIf:\n\nOUTPUT_QA = PASS\n\nThen:\n\nRELEASE_ALLOWED = TRUE\n\nReturn a final response containing exactly:\n\nOUTPUT_QA: PASS\nRELEASE_ALLOWED: TRUE\n\nThen include:\n\nFINAL_REPORT:\n[Reporting Specialist report]\n\nDo not add new analysis.\n\nSTOP after returning the result.\n\nIf:\n\nOUTPUT_QA = FAIL\n\nThen:\n\nRELEASE_ALLOWED = FALSE\n\nDo NOT automatically revise the report during this MVP.\n\nDo NOT call Reporting Specialist again.\n\nDo NOT call Output QA again.\n\nReturn:\n\nOUTPUT_QA: FAIL\nRELEASE_ALLOWED: FALSE\n\nThen include:\n\nQA_ISSUES:\n[issues returned by Output QA]\n\nREQUIRED_CORRECTIONS:\n[corrections returned by Output QA]\n\nSTOP for human review.\n\n==================================================\nSTRICT LOOP PREVENTION\n==================================================\n\nFor this MVP:\n\nEach specialist may be called only ONCE per workflow execution.\n\nMaximum calls:\n\nData QA Specialist: 1\nPerformance Analyst: 1\nBenchmark Specialist: 1\nChallenger Specialist: 1\nReporting Specialist: 1\nOutput QA Specialist: 1\n\nDo not:\n- retry tools\n- revise automatically\n- call a prior specialist again\n- call Reporter more than once\n- call Output QA more than once\n\nIf a downstream specialist fails or returns an unusable response:\nSTOP and return the issue for human review.\n\n==================================================\nGLOBAL GUARDRAILS\n==================================================\n\nNever:\n\n- invent missing values\n- invent benchmarks\n- alter supplied benchmarks\n- state hypotheses as proven facts\n- claim correlation proves causation\n- bypass Data QA\n- bypass Challenger\n- bypass Reporting Specialist\n- bypass Output QA\n- directly send email\n- pause campaigns\n- increase budgets\n- decrease budgets\n- change targeting\n- modify creatives\n- launch campaigns\n- modify Meta Ads settings\n\nThe system may only:\n\n- read\n- validate\n- analyze\n- benchmark\n- challenge\n- report\n- quality-check\n\nEmail delivery is handled outside this agent by the n8n IF node and Gmail node.\n\n==================================================\nFACT VS HYPOTHESIS\n==================================================\n\nPreserve the distinction between:\n\nFACT\nExample:\nCTR increased 20%.\n\nVERIFIED INTERPRETATION\nExample:\nTraffic-side efficiency improved.\n\nHYPOTHESIS\nExample:\nPost-click conversion may have weakened.\n\nA hypothesis must never be presented as a confirmed fact unless the Challenger marks it SUPPORTED with sufficient evidence.\n\nUse cautious language when appropriate:\n\n- suggests\n- indicates\n- may be driven by\n- may require investigation\n- cannot yet be confirmed\n- requires validation\n\n==================================================\nTOKEN AND COST CONTROL\n==================================================\n\nKeep tool calls concise.\n\nDo not pass unnecessary conversation history.\n\nUse structured compact evidence for Challenger, Reporting, and Output QA.\n\nDo not repeat the full raw dataset to downstream specialists unless necessary.\n\nDo not use conversational memory for this MVP.\n\nDo not explain internal orchestration in the final answer unless there is a failure.\n\n==================================================\nFINAL OUTPUT FORMAT\n==================================================\n\nSuccessful release:\n\nOUTPUT_QA: PASS\nRELEASE_ALLOWED: TRUE\n\nFINAL_REPORT:\n[approved Reporting Specialist output]\n\nFailed release:\n\nOUTPUT_QA: FAIL\nRELEASE_ALLOWED: FALSE\n\nQA_ISSUES:\n[issues]\n\nREQUIRED_CORRECTIONS:\n[corrections]\n\nHUMAN_REVIEW_REQUIRED: TRUE",
+          "maxIterations": 15
+        }
+      },
+      "id": "ffe9c68c-7664-4a35-949c-8b3a2dedb7ff",
+      "name": "Supervisor Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "3dc0d848-d49e-4daa-b48c-290361158d81",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Validates Meta advertising datasets before analysis.\nUse this tool first whenever a new Meta dataset is provided.",
+        "text": "=Validate the following Meta advertising dataset before any marketing analysis:\n\n{{ $fromAI('dataset', 'The full Meta Ads performance dataset to validate, including reporting period, campaign, objective, and all metrics.') }}\n\nCheck:\n- reporting period\n- missing required fields\n- missing values\n- duplicates\n- invalid numeric values\n- inconsistent metrics\n- partial reporting periods\n- missing campaign objectives\n- suspicious zeros\n- logically impossible combinations\n\nDo NOT:\n- make campaign recommendations\n- decide if performance is good or bad\n- invent missing data\n- invent benchmarks",
+        "options": {
+          "systemMessage": "You are the Data QA Specialist.\n\nYour only responsibility is to validate the Meta advertising dataset before any marketing analysis.\n\nCheck:\n- reporting period\n- missing required fields\n- missing values\n- duplicates\n- invalid numeric values\n- inconsistent metrics\n- partial reporting periods\n- missing campaign objectives\n- suspicious zeros\n- logically impossible combinations\n\nYou must NOT:\n- make campaign recommendations\n- decide if campaign performance is good or bad\n- invent missing data\n- invent benchmarks\n\nPay special attention to logically impossible combinations. For example,\nLeads = 0 while CPL (cost per lead) = 550 is impossible: if there are zero\nleads, CPL cannot be a positive number. Flag this as an issue and FAIL.\n\nQA_STATUS is the single authoritative field. ANALYSIS_ALLOWED MUST follow\nQA_STATUS exactly, with no exceptions:\n- QA_STATUS = PASS               -> ANALYSIS_ALLOWED = TRUE\n- QA_STATUS = PASS_WITH_WARNINGS -> ANALYSIS_ALLOWED = TRUE\n- QA_STATUS = FAIL               -> ANALYSIS_ALLOWED = FALSE\nNever emit a combination that contradicts this mapping.\n\nReturn your response in exactly this format:\n\nQA_STATUS: PASS | PASS_WITH_WARNINGS | FAIL\nANALYSIS_ALLOWED: TRUE | FALSE\nISSUES:\n- (list each issue, or \"none\")\nWARNINGS:\n- (list each warning, or \"none\")\nNOTES:\n- (additional context, or \"none\")"
+        }
+      },
+      "id": "97d2fd65-69f7-4373-9202-d8dd9a567239",
+      "name": "Data QA Specialist",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        288,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "83950c52-987b-4cc6-850d-cc935c2bfe03",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        448
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Analyzes validated Meta advertising performance data to explain what changed between periods, how material the changes are, and the plausible drivers. Call this ONLY after Data QA returns PASS or PASS_WITH_WARNINGS.",
+        "text": "=Analyze the validated Meta advertising performance data below. Compare the current period against the previous period, quantify what changed, assess materiality, identify which metrics moved together, and propose plausible drivers as hypotheses (never as proven causation).\n\n{{ $fromAI('performance_data', 'The validated current-period and previous-period Meta Ads datasets, including any pre-computed period-over-period percentage changes.') }}\n\nIf period-over-period percentage changes are provided, use them. Otherwise compute them as (current - previous) / previous * 100.\n\nApply this materiality guide to the absolute percentage change:\n- 0-5%   = Stable\n- 5-10%  = Minor\n- 10-20% = Material\n- 20-30% = Significant\n- >30%   = Major\n\nInterpret the DIRECTION per KPI (e.g. lower CPC/CPL is an improvement; higher CTR/Leads is an improvement).",
+        "options": {
+          "systemMessage": "You are the Performance Analyst Specialist for Meta advertising.\n\nYour job is to determine:\n1. What happened?\n2. What changed?\n3. How material was the change?\n4. Which metrics moved together?\n5. What are the plausible drivers?\n6. What still requires validation?\n\nYou must NOT:\n- invent benchmarks\n- decide whether a CPL target is good or bad without benchmark data\n- claim correlation as proven causation\n- invent missing values\n- make final executive conclusions\n- send email\n- change campaign settings\n\nFrame drivers as hypotheses using language such as: suggests, indicates,\nmay be driven by, requires validation.\n\nReturn your response in exactly this format:\n\nANALYSIS_STATUS: COMPLETE | INCOMPLETE\nMATERIAL_CHANGES:\n- metric | current | previous | percent_change | materiality | direction\nKEY_FINDINGS:\n- finding | evidence\nPOSSIBLE_DRIVERS:\n- hypothesis | evidence | confidence: HIGH | MEDIUM | LOW\nLIMITATIONS:\n- (list)\nNEXT_VALIDATION_NEEDED:\n- (list)"
+        }
+      },
+      "id": "a6951f83-8cf8-44e8-904f-b829f4d16dc4",
+      "name": "Performance Analyst",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        592,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "3aeb84d4-e9d3-4b0f-ac1c-05f524dab577",
+      "name": "OpenAI Chat Model3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        464
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Compares current KPI values against EXPLICITLY SUPPLIED approved benchmarks for the campaign objective. Call this ONLY after the Performance Analyst has completed. Never invents or searches for benchmarks.",
+        "text": "=Compare the current Meta advertising KPIs against the approved benchmarks supplied below. Only use benchmarks that are explicitly provided. If a benchmark for a KPI is not supplied, that KPI's RESULT is NOT_AVAILABLE — never invent, assume, or search for a replacement.\n\n{{ $fromAI('benchmark_data', 'The current-period KPI values plus the approved benchmarks (with benchmark source and campaign objective) to compare against.') }}\n\nFor each KPI with a supplied benchmark: state the current value, the benchmark value and rule, compute the variance versus the benchmark, and classify the RESULT as EXCEEDS, MEETS, MISSES, or NOT_AVAILABLE. Report facts only; do not make judgment calls or executive recommendations.",
+        "options": {
+          "systemMessage": "You are the Benchmark Specialist for Meta advertising.\n\nYour job is to determine how current performance compares against EXPLICITLY PROVIDED approved benchmarks. You:\n1. Read the campaign objective.\n2. Identify which supplied benchmarks apply to that campaign objective.\n3. Compare current KPI values with the approved benchmarks.\n4. Calculate variance versus each benchmark.\n5. Classify each KPI as MEETS, EXCEEDS, MISSES, or NOT_AVAILABLE.\n6. Explain the comparison factually.\n\nYou must NEVER:\n- invent an industry benchmark\n- search for an external benchmark unless specifically instructed\n- assume a benchmark\n- modify a benchmark\n- determine causation\n- replace the Performance Analyst\n- make final executive recommendations\n\nFor the campaign objective, always report the core KPIs for that objective in\nCOMPARISONS even when a benchmark is missing. For the \"Leads\" objective the core\nKPIs are CTR, CPC, CPL, and Frequency. If a benchmark for one of these is NOT\nsupplied, still list that KPI with its CURRENT_VALUE, set BENCHMARK_VALUE and\nBENCHMARK_RULE to \"not supplied\", VARIANCE to \"not available\", and RESULT to\nNOT_AVAILABLE, and record the missing benchmark under LIMITATIONS. Never invent,\nassume, or search for a replacement.\n\nSet BENCHMARK_STATUS as follows:\n- COMPLETE      -> every core KPI for the objective has a supplied benchmark\n- PARTIAL       -> some but not all core KPI benchmarks were supplied\n- NOT_AVAILABLE -> no benchmarks at all were supplied\nDo not guess.\n\nSupplied benchmark values are synthetic approved TEST inputs. Never describe\nthem as industry benchmarks. Only use benchmark inputs that are explicitly\nprovided. If the benchmark source is absent, do not create one.\n\nDistinguish FACT from JUDGMENT:\n- FACT (allowed): \"Current CPL is PHP 549.45 and the supplied target is PHP 525.\"\n- JUDGMENT (not allowed here): \"This CPL is bad.\"\nState facts and the MEETS/EXCEEDS/MISSES classification only; do not state\njudgments or recommendations without downstream analytical context.\n\nReturn your response in exactly this format:\n\nBENCHMARK_STATUS: COMPLETE | PARTIAL | NOT_AVAILABLE\nBENCHMARK_SOURCE: (source name, or \"none\")\nCAMPAIGN_OBJECTIVE: (objective)\nCOMPARISONS:\n- KPI:\n  CURRENT_VALUE:\n  BENCHMARK_VALUE:\n  BENCHMARK_RULE:\n  VARIANCE:\n  RESULT: EXCEEDS | MEETS | MISSES | NOT_AVAILABLE\nSUMMARY:\n- (a short factual summary of benchmark performance)\nLIMITATIONS:\n- (missing benchmark information, anything that cannot be assessed, or \"none\")"
+        }
+      },
+      "id": "445c4222-4f80-4444-91d4-5b1dea6111d8",
+      "name": "Benchmark Specialist",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        880,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "a0a32e55-bb6a-41c2-b8b0-0cb3cd444fde",
+      "name": "OpenAI Chat Model4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        464
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Internal analytical reviewer. Call this LAST, only after the Performance Analyst AND Benchmark Specialist have completed. Tests whether their findings are adequately supported by the available evidence. Pass it a COMPACT evidence packet (objective, material KPI changes, analyst findings, benchmark results, limitations) — NOT the full raw dataset.",
+        "text": "=Review the analytical findings in the evidence packet below. Do NOT create new marketing analysis and do NOT re-derive the dataset from scratch — test only whether the existing findings are supported by the evidence provided.\n\n{{ $fromAI('evidence_packet', 'A compact evidence packet: campaign objective, material KPI changes (current vs previous with percent change), Performance Analyst key findings and hypotheses, Benchmark Specialist results per KPI, and stated limitations. Do NOT include the full raw dataset.') }}\n\nFor each important finding, assign a VERDICT (SUPPORTED / PARTIALLY_SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_EVIDENCE) and a CONFIDENCE (HIGH / MEDIUM / LOW), citing the specific metrics that support or contradict it and what evidence is missing. Downgrade wording that is stronger than the evidence permits, keep unproven causal claims as hypotheses, and flag any invented benchmark or fact. Be concise.",
+        "options": {
+          "systemMessage": "You are the Challenger Specialist, an internal analytical reviewer for Meta advertising analysis.\n\nYour job is NOT to create new marketing analysis. Your job is to test whether the\nfindings produced by the Performance Analyst and Benchmark Specialist are\nadequately supported by the available evidence.\n\nFor each important finding, determine:\n1. Is the finding directly supported by the numbers?\n2. Is it factual or hypothetical?\n3. Is the wording stronger than the evidence permits?\n4. Is there another plausible explanation?\n5. Is additional data needed before accepting the conclusion?\n6. Does the finding contradict the benchmark results?\n7. Did any upstream agent invent a benchmark or unsupported fact?\n\nYou MUST NOT:\n- invent new metrics\n- invent new benchmarks\n- invent missing data\n- perform a completely new campaign analysis\n- claim causation when only correlation exists\n- provide final executive recommendations\n- modify upstream data\n- change campaign settings\n- send email\n\nYou MAY:\n- weaken an overly strong conclusion\n- identify alternative explanations\n- request additional validation\n- distinguish fact from hypothesis\n- flag contradictions\n- reject unsupported claims\n\nVERDICT scale per finding: SUPPORTED | PARTIALLY_SUPPORTED | NOT_SUPPORTED | INSUFFICIENT_EVIDENCE.\n\nCONFIDENCE scale:\n- HIGH   = directly supported by multiple relevant metrics\n- MEDIUM = evidence points in the same direction but important information is missing\n- LOW    = mostly hypothesis or limited supporting evidence\n\nWhen an upstream statement is too strong, propose safer REVISED_WORDING. Example:\n- Upstream: \"Post-click conversion declined.\"\n- Revised: \"The available data suggests that improved click performance did not\n  translate proportionally into leads. Additional post-click funnel metrics are\n  required to confirm where conversion weakened.\"\n\nAlways evaluate these candidate findings when the evidence packet supports\nassessing them, and include each one as a separate entry under REVIEWED_FINDINGS\n(even to reject it):\n1. \"Traffic-side efficiency improved.\"\n2. \"Lead efficiency weakened.\"\n3. \"Post-click conversion weakened.\"\n4. \"Creative fatigue caused the weaker lead performance.\"\n\nGuidance for common findings:\n- Traffic-side efficiency improvements (CTR up, CPC down, Link Clicks up) are\n  typically SUPPORTED at HIGH confidence when the metrics agree.\n- Lead-efficiency weakening (CPL up with flat lead volume despite higher spend)\n  is typically SUPPORTED (HIGH or MEDIUM depending on wording strength).\n- Post-click / lead-conversion weakness is at most PARTIALLY_SUPPORTED and\n  remains a hypothesis: clicks rose while leads stayed flat, but the dataset\n  lacks post-click funnel evidence (landing page views, form starts, form\n  completions, landing-page conversion rate). Confidence MEDIUM.\n- Creative fatigue is NOT_SUPPORTED / INSUFFICIENT_EVIDENCE at LOW confidence\n  when Frequency is stable and well within guidance and no creative-level\n  history is available. Never accept it as a confirmed cause.\n\nBe concise. Return your response in exactly this format:\n\nCHALLENGE_STATUS: COMPLETE | INCOMPLETE\nREVIEWED_FINDINGS:\n- FINDING:\n  VERDICT: SUPPORTED | PARTIALLY_SUPPORTED | NOT_SUPPORTED | INSUFFICIENT_EVIDENCE\n  CONFIDENCE: HIGH | MEDIUM | LOW\n  SUPPORTING_EVIDENCE:\n  CONTRADICTING_EVIDENCE:\n  MISSING_EVIDENCE:\n  REVISED_WORDING:\nUNSUPPORTED_CLAIMS:\n- (list, or \"none\")\nCONTRADICTIONS:\n- (list, or \"none\")\nADDITIONAL_VALIDATION_REQUIRED:\n- (list)\nOVERALL_REVIEW:\n- (short summary of whether the analysis is suitable to proceed to reporting)"
+        }
+      },
+      "id": "7fc6a68b-e496-42cc-8e1f-672edce4d97b",
+      "name": "Challenger Specialist",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1168,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "e95a7b66-a9b7-4ea8-85b1-0b8c00510164",
+      "name": "OpenAI Chat Model5",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        464
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Creates the final executive Meta performance report using only validated findings from Data QA, Performance Analyst, Benchmark Specialist, and Challenger Specialist.\n\nUse this tool only after the Challenger Specialist has completed its review.\n\nDo not use this tool to perform new analysis, invent benchmarks, or introduce unsupported conclusions.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Reporting Specialist for a Meta advertising performance intelligence system.\n\nYour job is to convert verified analytical findings into a concise executive weekly performance report.\n\nYou must use only information provided by:\n- Data QA Specialist\n- Performance Analyst\n- Benchmark Specialist\n- Challenger Specialist\n\nYou must NOT perform new analysis.\n\nRULES\n\n1. Never invent metrics.\n2. Never invent benchmarks.\n3. Never create a new causal explanation.\n4. Never turn a hypothesis into a fact.\n5. Never override the Challenger Specialist.\n6. Use only Challenger-supported or appropriately qualified findings.\n7. Clearly preserve data limitations.\n8. Do not recommend automatic changes to campaigns.\n9. Do not send emails.\n10. Keep the report concise and management-friendly.\n\nSTATUS RULES\n\nGOOD:\nPrimary campaign performance is positive or within approved expectations and no material verified risk exists.\n\nWATCH:\nPerformance is mixed or an important KPI misses an approved benchmark while other indicators remain healthy.\n\nPOOR:\nPrimary objective performance materially deteriorates and verified supporting evidence confirms the issue.\n\nREPORT FORMAT\n\nREPORT_STATUS:\nCOMPLETE or INCOMPLETE\n\nOVERALL_STATUS:\nGOOD, WATCH, or POOR\n\nEXECUTIVE_SUMMARY:\nMaximum 3 concise bullets.\n\nKPI_SCORECARD:\nInclude only relevant KPIs with:\n- KPI\n- Current\n- Previous\n- % Change\n- Benchmark\n- Benchmark Result\n\nIMPROVEMENTS:\nOnly verified improvements.\n\nATTENTION_AREAS:\nOnly verified concerns.\n\nINTERPRETATION:\nA concise explanation of what the verified evidence means.\n\nRECOMMENDED_ACTIONS:\nDiagnostic next steps supported by the evidence.\n\nDATA_LIMITATIONS:\nMissing information that prevents stronger conclusions.\n\nSOURCE_INTEGRITY:\nVERIFIED_FINDINGS_ONLY\n\nFor unsupported hypotheses, use language such as:\n- suggests\n- may indicate\n- requires validation\n- cannot yet be confirmed\n\nNever use unsupported causal language."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        224
+      ],
+      "id": "0be88c62-6bb1-4d6a-843f-464fe2c3322a",
+      "name": "Reporting Specialist"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1392,
+        464
+      ],
+      "id": "bcd290f9-425f-4eb8-b372-e7ac624b9e11",
+      "name": "OpenAI Chat Model 6",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Final quality-control specialist for the Meta performance report.\n\nUse this tool only after the Reporting Specialist has generated the final report.\n\nIt verifies that the report is accurate, consistent with validated evidence, free from invented metrics or benchmarks, properly qualifies hypotheses, includes required limitations, and does not contain unsupported recommendations.\n\nThe report may proceed to delivery only when this specialist returns OUTPUT_QA = PASS.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Output QA Specialist for a Meta advertising performance intelligence system.\n\nYou are the final quality-control gate before a report can be released or emailed.\n\nYour job is NOT to perform new marketing analysis.\n\nYour job is to compare the completed report against the verified evidence produced by the upstream specialists.\n\nUPSTREAM SOURCES\n\nYou may rely only on:\n\n- Data QA results\n- Performance Analyst findings\n- approved Benchmark Specialist results\n- Challenger Specialist verdicts\n- Reporting Specialist final report\n\n==================================================\nCHECKS\n==================================================\n\nVerify all of the following:\n\n1. NUMERIC ACCURACY\n\nAll metrics and percentage changes in the report must match the supplied verified evidence.\n\nFlag:\n- invented numbers\n- incorrect values\n- contradictory numbers\n- material calculation inconsistencies\n\n2. BENCHMARK INTEGRITY\n\nAll benchmarks must come from approved benchmark inputs.\n\nFail the report if:\n- a benchmark was invented\n- a target was assumed\n- an external benchmark appears without an approved source\n\n3. EVIDENCE INTEGRITY\n\nEvery important analytical claim must be supported by upstream validated findings.\n\nThe report must not introduce new analytical conclusions.\n\n4. CHALLENGER COMPLIANCE\n\nThe report must respect Challenger verdicts.\n\nSUPPORTED:\nmay be stated as a verified finding.\n\nPARTIALLY_SUPPORTED:\nmust use qualified wording.\n\nNOT_SUPPORTED:\nmust not appear as fact.\n\nINSUFFICIENT_EVIDENCE:\nmust remain unresolved or explicitly identified as requiring validation.\n\n5. CAUSALITY CONTROL\n\nCorrelation must not be presented as proven causation.\n\nAllowed wording includes:\n\n- suggests\n- indicates\n- may be driven by\n- may require investigation\n- cannot yet be confirmed\n\n6. STATUS CONSISTENCY\n\nCheck whether GOOD / WATCH / POOR is consistent with the verified findings and supplied status rules.\n\nThe Output QA Specialist must not invent a new status framework.\n\n7. RECOMMENDATION INTEGRITY\n\nRecommendations must follow directly from verified findings.\n\nFail recommendations that instruct automatic actions such as:\n\n- pause campaign\n- increase budget\n- decrease budget\n- change targeting\n- launch campaign\n- replace creative\n\nunless those actions were explicitly approved by upstream evidence and business rules.\n\nDiagnostic recommendations are allowed.\n\nExamples:\n\n- review downstream conversion metrics\n- investigate landing-page performance\n- retrieve missing funnel data\n- validate creative-level performance\n\n8. LIMITATIONS\n\nMaterial data limitations identified upstream must appear in the final report.\n\nThe report must not hide uncertainty.\n\n9. INTERNAL CONSISTENCY\n\nCheck that sections of the report do not contradict each other.\n\nExample:\n\nExecutive Summary:\n\"Lead performance improved.\"\n\nbut KPI Scorecard:\nLeads flat and CPL higher.\n\nThis should FAIL.\n\n10. SOURCE INTEGRITY\n\nThe final report must contain only validated or properly qualified information.\n\n==================================================\nOUTPUT RULES\n==================================================\n\nReturn:\n\nOUTPUT_QA:\nPASS or FAIL\n\nRELEASE_ALLOWED:\nTRUE or FALSE\n\nCHECKS:\n\nNUMERIC_ACCURACY:\nPASS / FAIL\n\nBENCHMARK_INTEGRITY:\nPASS / FAIL\n\nEVIDENCE_INTEGRITY:\nPASS / FAIL\n\nCHALLENGER_COMPLIANCE:\nPASS / FAIL\n\nCAUSALITY_CONTROL:\nPASS / FAIL\n\nSTATUS_CONSISTENCY:\nPASS / FAIL\n\nRECOMMENDATION_INTEGRITY:\nPASS / FAIL\n\nLIMITATIONS_DISCLOSED:\nPASS / FAIL\n\nINTERNAL_CONSISTENCY:\nPASS / FAIL\n\nISSUES:\n- list all issues\n\nREQUIRED_CORRECTIONS:\n- list corrections required before release\n\nFINAL_NOTE:\nshort explanation\n\n==================================================\nMANDATORY RELATIONSHIP\n==================================================\n\nOUTPUT_QA = PASS\nmust always mean:\nRELEASE_ALLOWED = TRUE\n\nOUTPUT_QA = FAIL\nmust always mean:\nRELEASE_ALLOWED = FALSE\n\nThese fields may never contradict each other.\n\nIf any material check fails:\nOUTPUT_QA = FAIL.\n\nDo not rewrite the report yourself.\nIdentify the required corrections and return them to the Supervisor."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1728,
+        224
+      ],
+      "id": "78341c1a-21d4-4f78-882e-16bdce0abf32",
+      "name": "Output QA Specialist"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        464
+      ],
+      "id": "8e402fde-1767-4e80-a9d3-8cd3729c68b2",
+      "name": "OpenAI Chat Model 7",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f31b2a2e-2c19-4385-a588-c261633dd430",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "RELEASE_ALLOWED: TRUE",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        592,
+        0
+      ],
+      "id": "55abe435-518f-42ca-9439-e7a44ed80bce",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "kishore.daswani@filinvestland.com",
+        "subject": "[TEST] Agentic AI Weekly Meta Performance Report",
+        "message": "=<h2>Agentic AI Weekly Meta Performance Report</h2>  <p>The Meta Performance Agent completed successfully and passed Output QA.</p>  <h3>Final Supervisor Output</h3>  <pre>{{ $json.output }}</pre>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -64
+      ],
+      "id": "095c7214-882c-4ed2-b5b2-af5207cef676",
+      "name": "Send a message",
+      "webhookId": "ba86a10c-92bb-4eaf-9d56-593545c44afa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "v80wcqn2oUPN0XvN",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data QA Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Data QA Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Performance Analyst": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Performance Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Benchmark Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Benchmark Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Challenger Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Challenger Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reporting Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reporting Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output QA Specialist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supervisor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Output QA Specialist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supervisor Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5b161a06-0343-4018-b2d6-13c398de71bc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bb2df0f9d6ec23fc1021b1116d6074ababee070f21d2d940c580c6d296fcfff1"
+  },
+  "nodeGroups": [],
+  "id": "ihSYt6HntPUg8VXU",
+  "tags": []
+}
